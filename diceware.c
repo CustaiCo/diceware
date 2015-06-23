@@ -7,54 +7,62 @@
 #include <linux/random.h>
 #include "arg.h"
 #include "words.h"
+#include "strtonum.c"
 
-char *getrandomword(void);
-uint32_t randomuniform(uint32_t);
-uint32_t truerandom(void);
+static char *getrandomword(void);
+static uint32_t randomuniform(uint32_t);
+static uint32_t truerandom(void);
+static void usage(void);
 
 int main(int argc, char** argv) {
     char *argv0;
+    const char *errstr = NULL;
     static char* opt_word_count = NULL;
     int word_count;
 
     ARGBEGIN {
         case 'n':
-            opt_word_count = ARGF();
+            opt_word_count = EARGF(usage());
             break;
     }
     ARGEND
     
     if(opt_word_count)
-        word_count = atoi(opt_word_count);
+        word_count = strtonum(opt_word_count, 1, 255, &errstr);
     else
         word_count = 7;
-    
-    if(word_count <=0 )
-        exit(EXIT_FAILURE);
+
+    if(errstr != NULL)
+        usage();
 
     while(word_count--) {
-        printf( word_count ? "%s " : "%s", getrandomword());
+        printf(word_count ? "%s " : "%s", getrandomword());
     }
     printf("\n");
     
     return 0;
 }
 
-char *getrandomword() {
+static void usage() {
+    puts("usage: diceware [-n numberwords]");
+    exit(EXIT_FAILURE);
+}
+
+static char *getrandomword() {
     return dicewords[randomuniform(DWARE_WORD_COUNT)];
 }
 
-uint32_t truerandom(void) {
+static uint32_t truerandom(void) {
     unsigned char buf[4];
     uint32_t ret;
     int getrandomret;
 
     do {
         getrandomret = syscall(SYS_getrandom, buf, 4, NULL);
-    } while(getrandomret == -1 && errno == EINTR );
+    } while(getrandomret == -1 && errno == EINTR);
 
     if(getrandomret != 4 ) {
-        perror( "Failed to get randomness!");
+        perror("Failed to get randomness!");
         exit(EXIT_FAILURE);
     }   
     ret = buf[0];
@@ -92,7 +100,7 @@ uint32_t truerandom(void) {
  * [2**32 % upper_bound, 2**32) which maps back to [0, upper_bound)
  * after reduction modulo upper_bound.
  */
-uint32_t randomuniform(uint32_t upper_bound) {
+static uint32_t randomuniform(uint32_t upper_bound) {
 	uint32_t r, min;
 
 	if (upper_bound < 2)
