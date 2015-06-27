@@ -1,0 +1,26 @@
+.Dd June 25, 2015
+.Os
+.Dt DICEWARE 1
+.Sh NAME
+.Nm diceware
+.Nd create strong memorizable passwords
+.Sh SYNOPSIS
+.Nm
+.Op Fl n Ar numberwords
+.Sh DESCRIPTION
+.Nm
+creates strong passwords using the diceware method,
+http://world.std.com/~reinhold/diceware.html,
+using randomness from
+.Xr getrandom 2
+instead of dice as described in the web site.
+It uses the original 7776 words designed for dice generation.
+Words are output with a space between them, but the security should
+not be reduced if the space is ommited when using the password.
+If the
+.Op Fl n
+flag is not used it will produce a seven word output, which has
+90.4 bits of entropy, that should be adequate for strongly protecting
+against brute force attacks.
+.Sh EXIT STATUS
+.Ex -std
